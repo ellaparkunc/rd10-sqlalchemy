@@ -6,7 +6,7 @@ from typing import Self, Type
 
 
 # ========================
-# Pydantic
+# Pydantic Data Models
 
 from pydantic import BaseModel, field_validator
 
@@ -22,7 +22,7 @@ class User(BaseModel):
 
 
 # ========================
-# SqlAlchemy
+# SqlAlchemy / Entity Layer
 
 from sqlalchemy import create_engine, Integer, String
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column, Session
@@ -40,19 +40,14 @@ class UserEntity(Base):
     first_name: Mapped[str] = mapped_column(String)
     last_name: Mapped[str] = mapped_column(String)
 
-    @classmethod
-    def from_model(cls: Type[Self], user: User) -> Self:
-        return UserEntity(pid=user.pid, first_name=user.first_name, last_name=user.last_name)
-
-    def to_model(self) -> User:
-        return User(pid=self.pid, first_name=self.first_name, last_name=self.last_name)
+    # TODO: Define from_model and to_model methods
 
 
 Base.metadata.create_all(engine)
 
 
-# =========================
-# Service / "Business Logic"
+# ================================
+# Service / "Business Logic" Layer
 
 class UserService:
     _session: Session
@@ -61,10 +56,8 @@ class UserService:
         self._session = session
 
     def register(self, user: User) -> User:
-        user_entity: UserEntity = UserEntity.from_model(user)
-        self._session.add(user_entity)
-        self._session.commit()
-        return user_entity.to_model()
+        # TODO: Persist the `user` object
+        return user
 
     def get(self, pid: int) -> User:
         user = self._session.get(UserEntity, pid)
