@@ -17,6 +17,10 @@ class User(BaseModel):
 
     @field_validator('pid')
     def pid_must_be_9_digits(cls, value: int):
+        if(len(str(value)) != 9):
+            # his way:
+        # if value < 100000000 or value > 999999999:
+            raise ValueError("Please enter a 9 digit PID")
         # TODO: Raise ValueError if pid is not 9 digits
         return value
 
@@ -41,6 +45,17 @@ class UserEntity(Base):
     last_name: Mapped[str] = mapped_column(String)
 
     # TODO: Define from_model and to_model methods
+    @classmethod
+    def from_model(cls: Type[Self], user: User) -> Self:
+        return UserEntity(pid=user.pid, first_name=user.first_name, last_name=user.last_name)
+    
+    # TODO: Define an *instance method* to convert a UserEntity into a Pydantic User Model
+    # named to_model
+    @classmethod
+    def to_model(self) -> User:
+        return User(pid=self.pid, first_name=self.first_name, last_name=self.last_name)
+    
+Base.metadata.create_all(engine)
 
 
 Base.metadata.create_all(engine)
@@ -56,8 +71,11 @@ class UserService:
         self._session = session
 
     def register(self, user: User) -> User:
-        # TODO: Persist the `user` object
-        return user
+        # TODO: Persist the `user` object: create entity, add to session
+        user_entity: UserEntity = UserEntity.from_model(user) # create entity
+        self._session.add(user_entity) # add to session
+        self._session.commit() 
+        return user_entity.to_model()
 
     def get(self, pid: int) -> User:
         user = self._session.get(UserEntity, pid)
@@ -70,6 +88,10 @@ class UserService:
 # =========================
 # Demo
 # 1. Construct a User
-# 2. Construct a UserService(session_factory())
+    # a_user = User(pid=730330121, first_name="Ella", last_name="Parker")
+# 2. Construct a UserService(session_factory()) named user_service
+user_service = UserService(session_factory())
 # 3. Register your User object using the service
+# user_service.register(a_user)
 # 4. Use the get method of your service to fetch the user from database
+print(user_service.get(730330121))
